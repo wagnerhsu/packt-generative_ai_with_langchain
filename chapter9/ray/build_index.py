@@ -27,7 +27,7 @@ from langchain_core.documents import Document
 from utils import clean_html_content
 
 # Initialize Ray
-ray.init()
+ray.init(include_dashboard=True, dashboard_host="0.0.0.0")
 
 
 @ray.remote

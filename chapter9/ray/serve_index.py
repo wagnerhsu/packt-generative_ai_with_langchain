@@ -1,6 +1,7 @@
 """Ray Server with pre-built FAISS index."""
 
 import ray
+import time
 from ray import serve
 from fastapi import FastAPI
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -19,7 +20,7 @@ class SearchDeployment:
         print("Loading pre-built index...")
         # Initialize the embedding model - must match what was used for building
         self.embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-mpnet-base-v2"
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
 
         # Check if index directory exists
@@ -40,7 +41,9 @@ to the 'faiss_index' directory. Once the index is built, you can restart this se
 
         # Load the pre-built index
         try:
-            self.index = FAISS.load_local("faiss_index", self.embeddings)
+            self.index = FAISS.load_local(
+                "faiss_index", self.embeddings, allow_dangerous_deserialization=True
+            )
             print(f"Successfully loaded index")
         except Exception as e:
             error_msg = f"""
@@ -123,6 +126,11 @@ if __name__ == "__main__":
             "Example query: http://localhost:8000/?query=How%20can%20Ray%20help%20with%20deploying%20LLMs%3F"
         )
         print("=" * 60 + "\n")
+
+        # Keep the script running to serve requests
+        while True:
+            time.sleep(5)
+
     except FileNotFoundError as e:
         # Index not found error is already handled with a clear message
         import sys
@@ -138,3 +146,7 @@ if __name__ == "__main__":
         import sys
 
         sys.exit(1)
+    except KeyboardInterrupt:
+        print("\nShutting down service...")
+        ray.shutdown()
+        print("Service stopped.")
